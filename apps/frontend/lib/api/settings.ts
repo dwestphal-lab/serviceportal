@@ -62,4 +62,9 @@ export const settings = {
     request<unknown>("/api/v1/settings/permissions", { method: "POST", body: JSON.stringify(body) }),
   importFromTanss: () =>
     request<TanssImportResult>("/api/v1/settings/users/import-from-tanss", { method: "POST" }),
+  setAdmin: (userId: string, isAdmin: boolean) =>
+    request<{ id: string; username: string; isAdmin: boolean }>(
+      `/api/v1/settings/users/${userId}/admin`,
+      { method: "PUT", body: JSON.stringify({ isAdmin }) }
+    ),
 };

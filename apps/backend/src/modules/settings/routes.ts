@@ -286,6 +286,18 @@ export async function settingsRoutes(server: FastifyInstance) {
         data: { isAdmin: request.body.isAdmin },
         select: { id: true, username: true, isAdmin: true },
       });
+
+      // Wenn Admin-Status gesetzt wird, alle aktuellen Module freischalten
+      if (request.body.isAdmin) {
+        for (const mod of MODULE_REGISTRY) {
+          await prisma.modulePermission.upsert({
+            where: { userId_moduleId: { userId: user.id, moduleId: mod.id } },
+            update: { allowed: true },
+            create: { userId: user.id, moduleId: mod.id, allowed: true },
+          });
+        }
+      }
+
       return reply.send(user);
     }
   );

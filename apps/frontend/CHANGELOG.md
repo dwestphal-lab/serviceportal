@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-03-25
+
+### Added
+- `modules/admin/UserPermissionMatrix.tsx`: Krone-Icon ist jetzt klickbar — Admin-Status pro User togglebar
+- `lib/api/settings.ts`: `settings.setAdmin(userId, isAdmin)` API-Funktion
+
 ## [0.4.0] - 2026-03-23
 
 ### Added

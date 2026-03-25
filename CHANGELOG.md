@@ -9,6 +9,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-25
+
+### Added
+- Administrator-Rolle für User "asmussen" (neben "westphal") beim Login und TANSS-Import
+- Admin-Toggle in der Berechtigungsmatrix: Krone-Icon per Klick zum Setzen/Entziehen der Admin-Rechte
+- Admins erhalten beim `/me`-Endpoint automatisch alle registrierten Module — auch zukünftige — ohne erneuten Import
+
 ## [0.3.0] - 2026-03-23
 
 ### Added

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-25
+
+### Added
+- `modules/auth/routes.ts`: "asmussen" wird beim Login als Admin erkannt (neben "westphal")
+- `modules/auth/routes.ts`: `/me`-Endpoint gibt für Admins alle MODULE_REGISTRY-IDs zurück (zukünftige Module automatisch inklusive)
+- `modules/settings/import.service.ts`: "asmussen" wird beim TANSS-Import als Admin erkannt
+- `modules/settings/routes.ts`: `PUT /users/:id/admin` setzt bei Admin-Promotion alle aktuellen Module frei
+
 ## [0.3.0] - 2026-03-23
 
 ### Added
