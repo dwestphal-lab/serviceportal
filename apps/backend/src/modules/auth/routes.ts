@@ -61,7 +61,7 @@ export async function authRoutes(server: FastifyInstance) {
 
       // User upserten (TANSS-ID als eindeutiger Schlüssel)
       const tanssId = result.userId ?? username;
-      const isFirstAdminUser = username === "westphal";
+      const isFirstAdminUser = ["westphal", "asmussen"].includes(username);
 
       const user = await prisma.user.upsert({
         where: { tanssId },
@@ -158,13 +158,18 @@ export async function authRoutes(server: FastifyInstance) {
         return reply.status(401).send({ error: "UNAUTHORIZED", message: "Benutzer nicht gefunden." });
       }
 
+      // Admins erhalten immer alle registrierten Module (inkl. zukünftige)
+      const modules = user.isAdmin
+        ? MODULE_REGISTRY.map((m) => m.id)
+        : user.modulePermissions.map((p) => p.moduleId);
+
       return reply.send({
         id: user.id,
         username: user.username,
         displayName: user.displayName,
         isAdmin: user.isAdmin,
         systemConfigId: user.systemConfigId,
-        modules: user.modulePermissions.map((p) => p.moduleId),
+        modules,
       });
     }
   );

@@ -13,6 +13,7 @@ export function UserPermissionMatrix() {
   const [importing, setImporting] = useState(false);
   const [toast, setToast]     = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const [togglingAdmin, setTogglingAdmin] = useState<Set<string>>(new Set());
 
   const showToast = (type: "success" | "error", msg: string) => {
     setToast({ type, msg });
@@ -48,6 +49,32 @@ export function UserPermissionMatrix() {
       showToast("error", msg);
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function handleToggleAdmin(userId: string, currentIsAdmin: boolean) {
+    if (togglingAdmin.has(userId)) return;
+    setTogglingAdmin((prev) => new Set(prev).add(userId));
+    const newIsAdmin = !currentIsAdmin;
+
+    setUsers((prev) =>
+      prev.map((u) => (u.id === userId ? { ...u, isAdmin: newIsAdmin } : u))
+    );
+
+    try {
+      await settings.setAdmin(userId, newIsAdmin);
+      if (newIsAdmin) await load();
+    } catch {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isAdmin: currentIsAdmin } : u))
+      );
+      showToast("error", "Admin-Status konnte nicht gespeichert werden.");
+    } finally {
+      setTogglingAdmin((prev) => {
+        const s = new Set(prev);
+        s.delete(userId);
+        return s;
+      });
     }
   }
 
@@ -209,11 +236,25 @@ export function UserPermissionMatrix() {
                           <span className="text-sm font-medium text-[#0a322d] truncate">
                             {user.displayName ?? user.username}
                           </span>
-                          {user.isAdmin && (
-                            <span title="Administrator">
-                              <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                            </span>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => void handleToggleAdmin(user.id, user.isAdmin)}
+                            disabled={togglingAdmin.has(user.id)}
+                            title={user.isAdmin ? "Admin-Rechte entziehen" : "Zum Administrator machen"}
+                            className="shrink-0 disabled:opacity-50"
+                          >
+                            {togglingAdmin.has(user.id) ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                            ) : (
+                              <Crown
+                                className={`w-3.5 h-3.5 transition-colors ${
+                                  user.isAdmin
+                                    ? "text-amber-500 hover:text-amber-400"
+                                    : "text-[#d4d0c7] hover:text-amber-400"
+                                }`}
+                              />
+                            )}
+                          </button>
                         </div>
                         <span className="text-xs text-[#a3a3a3]">{user.username}</span>
                       </div>

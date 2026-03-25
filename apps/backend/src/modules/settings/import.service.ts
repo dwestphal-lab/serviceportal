@@ -62,7 +62,7 @@ export async function importTanssEmployees(
     ).trim() || undefined;
 
     const username   = loginName || `tanss-user-${tanssId}`;
-    const isAdminUser = loginName === "westphal";
+    const isAdminUser = ["westphal", "asmussen"].includes(loginName);
 
     const user = await prisma.user.upsert({
       where: { tanssId },
