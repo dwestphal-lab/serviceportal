@@ -1,5 +1,7 @@
-# Claude Code internal files
-.claude/
+# Claude Code — nur persönliche Settings ausschließen, Skills/Agents werden geteilt
+.claude/settings.local.json
+.claude/skills/webapp-testing/screenshot_*.png
+.claude/skills/webapp-testing/capture_errors.py
 
 # Dependencies
 node_modules/
