@@ -1,0 +1,114 @@
+// ============================================================
+// PLENIUM — Prisma Schema
+// ============================================================
+// Regeln:
+// - Migrations sind IMMER additiv (kein DROP ohne explizite Freigabe)
+// - Neue Modul-Models hier eintragen + Migration generieren
+// - `prisma migrate dev`  → Entwicklung
+// - `prisma migrate deploy` → Produktion (sicher, datenerhaltend)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Core Models ───────────────────────────────────────────────────────────────
+
+/// Basisbenutzer — authentifiziert via TANSS
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tanssId      String  @unique @map("tanss_id")
+  username     String  @unique
+  displayName  String? @map("display_name")
+  shortName    String? @map("short_name")
+  isAdmin      Boolean @default(false) @map("is_admin")
+  isActive     Boolean @default(true)  @map("is_active")
+
+  systemConfigId String?      @map("system_config_id")
+  systemConfig   SystemConfig? @relation(fields: [systemConfigId], references: [id])
+
+  modulePermissions ModulePermission[]
+
+  @@map("users")
+}
+
+/// Externe System-Konfiguration (TANSS-Instanzen)
+model SystemConfig {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  name        String
+  type        String   @default("tanss")
+  baseUrl     String   @map("base_url")
+  useBackend  Boolean  @default(true)  @map("use_backend")
+  isDefault   Boolean  @default(false) @map("is_default")
+  isActive    Boolean  @default(true)  @map("is_active")
+
+  users User[]
+
+  @@map("system_configs")
+}
+
+/// Berechtigungsmatrix: User × Modul → allowed
+model ModulePermission {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId    String  @map("user_id")
+  moduleId  String  @map("module_id")
+  allowed   Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@index([userId])
+  @@map("module_permissions")
+}
+
+/// Audit-Log für alle System-Ereignisse
+model AuditLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  userId    String? @map("user_id")
+  action    String  // z.B. "user.login", "module.enabled"
+  entity    String? // z.B. "User", "Ticket"
+  entityId  String? @map("entity_id")
+  metadata  Json?   // Zusätzliche Kontextinformationen
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+// ── Module-Models ─────────────────────────────────────────────────────────────
+// Neue Module fügen ihre Models hier ein.
+// Beispiel:
+//
+// model Ticket {
+//   id          String   @id @default(cuid())
+//   createdAt   DateTime @default(now()) @map("created_at")
+//   updatedAt   DateTime @updatedAt @map("updated_at")
+//   title       String
+//   status      TicketStatus @default(OPEN)
+//   authorId    String   @map("author_id")
+//   @@map("tickets")
+// }
+//
+// enum TicketStatus {
+//   OPEN
+//   IN_PROGRESS
+//   RESOLVED
+//   CLOSED
+// }

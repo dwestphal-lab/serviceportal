@@ -1,0 +1,50 @@
+# Claude Code internal files
+.claude/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js
+apps/frontend/.next/
+apps/frontend/out/
+
+# Build outputs
+apps/backend/dist/
+packages/*/dist/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+# Server-seitige Env-Dateien (liegen in /opt/plenium/envs/, nicht im Repo)
+.env.prod
+.env.dev
+.env.dev-*
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Turbo
+.turbo/
+
+# Docker
+docker/nginx/ssl/
+
+# Prisma
+packages/db/node_modules/
+
+# TypeScript
+*.tsbuildinfo

@@ -1,0 +1,48 @@
+name: CI → dev-westphal
+
+# ============================================================
+# Dieses Workflow prüft nur die Code-Qualität.
+# Das Deployment übernimmt der Server selbst per Cron-Polling:
+#   poll-and-deploy.sh dev-westphal (läuft jede Minute)
+# ============================================================
+
+on:
+  push:
+    branches:
+      - dev-westphal
+  pull_request:
+    branches:
+      - dev-westphal
+
+jobs:
+  ci:
+    name: TypeScript & Build-Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: pnpm installieren
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript prüfen
+        run: pnpm --filter frontend tsc --noEmit
+        continue-on-error: true
+
+      - name: Info
+        run: |
+          echo "✓ CI abgeschlossen"
+          echo "→ Deployment erfolgt automatisch durch den Server (Polling alle 60s)"

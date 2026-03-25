@@ -1,0 +1,43 @@
+# ============================================================
+# PLENIUM — Traefik Reverse Proxy (OPTIONAL)
+# ============================================================
+# Diese Datei ist NICHT Teil des Standard-Setups.
+# Standard: jede Umgebung läuft auf eigenem Port (8081/8082/...).
+#
+# Traefik nur verwenden wenn gewünscht:
+#   - Hostname-basiertes Routing statt Ports
+#   - HTTPS/TLS-Terminierung
+#
+# Anleitung: docs/deployment/SERVER-SETUP.md
+# ============================================================
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    ports:
+      - "80:80"       # Einziger öffentlicher Port
+      # Traefik Dashboard — nur intern (kein Port nach außen!)
+      # Zugriff über SSH-Tunnel: ssh -L 8080:localhost:8080 user@server
+      # - "8080:8080"  # <- auskommentiert lassen für mehr Sicherheit
+    volumes:
+      # Docker-Socket (read-only) — Traefik entdeckt Container automatisch
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Traefik-Konfiguration
+      - ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - plenium-proxy
+    restart: unless-stopped
+    labels:
+      # Traefik Dashboard selbst erreichbar unter traefik.intern
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.intern`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+# ── Gemeinsames Netzwerk ─────────────────────────────────────────────────────
+# Alle PLENIUM-Umgebungen verbinden ihren NGINX mit diesem Netzwerk.
+# Nur Traefik hat Zugriff auf den Router — Container untereinander sind isoliert.
+networks:
+  plenium-proxy:
+    name: plenium-proxy
+    driver: bridge

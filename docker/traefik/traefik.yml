@@ -1,0 +1,35 @@
+# ============================================================
+# Traefik v3 — Konfiguration
+# ============================================================
+# Traefik ist der einzige Dienst mit Port 80/443.
+# Alle anderen Container sind nur intern erreichbar.
+# ============================================================
+
+# ── Einstiegspunkte ───────────────────────────────────────────────────────────
+entryPoints:
+  web:
+    address: ":80"
+  # HTTPS (optional, aktivieren wenn Zertifikate vorhanden):
+  # websecure:
+  #   address: ":443"
+
+# ── Docker Provider ───────────────────────────────────────────────────────────
+providers:
+  docker:
+    # Netzwerk in dem Traefik die Container erreicht
+    network: plenium-proxy
+    # Container müssen sich explizit per Label anmelden
+    exposedByDefault: false
+    # Docker-Socket (read-only)
+    endpoint: "unix:///var/run/docker.sock"
+
+# ── Traefik Dashboard (intern, kein Passwort) ─────────────────────────────────
+api:
+  dashboard: true
+  insecure: true   # Dashboard auf Port 8080 — nur intern zugänglich!
+
+# ── Logging ───────────────────────────────────────────────────────────────────
+log:
+  level: INFO
+
+accessLog: {}

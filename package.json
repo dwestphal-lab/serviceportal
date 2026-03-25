@@ -1,0 +1,24 @@
+{
+  "name": "plenium-serviceportal",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "db:migrate": "pnpm --filter @plenium/db migrate:dev",
+    "db:migrate:prod": "pnpm --filter @plenium/db migrate:prod",
+    "db:generate": "pnpm --filter @plenium/db generate",
+    "db:studio": "pnpm --filter @plenium/db studio",
+    "db:seed": "pnpm --filter @plenium/db seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

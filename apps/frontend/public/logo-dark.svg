@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 52" role="img" aria-label="PLENIUM">
+  <title>PLENIUM</title>
+  <!--
+    Hinweis: Ersetze diese SVG-Platzhalter-Logos durch die finalen
+    PNG/SVG-Dateien aus dem Brand-Asset-Paket.
+    Die PLENIUM-Schrift ist "Barlow Condensed ExtraBold" (Google Fonts).
+  -->
+  <text
+    x="0"
+    y="44"
+    font-family="'Arial Black', 'Franklin Gothic Heavy', 'Impact', ui-sans-serif, sans-serif"
+    font-weight="900"
+    font-size="50"
+    fill="#0a322d"
+    letter-spacing="-1"
+  >PLENIUM</text>
+</svg>
