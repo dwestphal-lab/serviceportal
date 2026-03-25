@@ -284,10 +284,8 @@ claude
 > Committe das als fix/logout-redirect und push
 
 # Claude committed und pushed
-
-> Erstelle einen PR auf develop
-
-# Claude erstellt den PR
+# GitHub Actions läuft automatisch:
+# → TypeScript-Check → Merge in develop → Docker-Rebuild → Dev-Server aktuell
 ```
 
 ### CLI vs. Desktop App — wann was?
@@ -349,7 +347,8 @@ Du kannst Code direkt markieren und Claude fragen:
 3. Im Chat: "Wir arbeiten an Feature X, erstelle Branch feature/x"
 4. Claude erstellt Branch, du siehst Dateien sich ändern
 5. Im Terminal (Strg+ö): pnpm dev → lokal testen
-6. Im Chat: "Sieht gut aus, committe und PR auf develop"
+6. Im Chat: "Sieht gut aus, committe und pushe den Branch"
+7. GitHub Actions merged automatisch → Dev-Server aktualisiert sich
 ```
 
 ### Terminal in VS Code öffnen
@@ -370,6 +369,26 @@ git status        # Status anzeigen
 ## Branch-Workflow — Schritt für Schritt
 
 Dies gilt für **alle Umgebungen** (Web, App, CLI, VS Code).
+
+### Wie der automatische Flow funktioniert
+
+```
+Du:     Push auf feature/* oder fix/*
+           ↓
+GitHub: TypeScript-Check läuft (ca. 2–3 Minuten)
+           ↓ bei Erfolg (kein GitHub-Klick nötig)
+GitHub: Automatischer Merge in develop
+           ↓
+Server: Erkennt neuen Commit (Polling alle 60s)
+           ↓
+Server: docker compose up -d --build
+           ↓
+Dev-Server ist aktualisiert ✓
+```
+
+**Du musst nichts in GitHub klicken — das passiert alles von selbst.**
+
+---
 
 ### Neues Feature entwickeln
 
@@ -404,25 +423,29 @@ Teste:       Das neue Feature manuell durchklicken
 Sage Claude: "Funktioniert, mach weiter" oder "Da ist ein Fehler: ..."
 ```
 
-**Schritt 6 — Commit & Push:**
+**Schritt 6 — Commit & Push → alles andere passiert automatisch:**
 ```
 Sage Claude: "Sieht gut aus, committe das und pushe den Branch"
 ```
 
-**Schritt 7 — PR erstellen:**
 ```
-Sage Claude: "Erstelle einen PR auf develop mit einer
-              guten Beschreibung was wir gemacht haben"
+Was dann automatisch passiert (kein weiteres Zutun nötig):
+  GitHub Actions → TypeScript prüfen (2–3 Min.)
+  → Merge in develop
+  → Server zieht develop (max. 60s)
+  → Docker neu gebaut und gestartet
+  → Dev-Server aktualisiert ✓
 ```
 
-**Schritt 8 — PR in GitHub mergen:**
+> **Tipp:** Den CI-Status siehst du auf
+> github.com/dwestphal-lab/serviceportal/actions
+> Ein grüner Haken = erfolgreich, Rotes X = TypeScript-Fehler
+
+**Was tun wenn das rote X erscheint?**
 ```
-1. Öffne github.com/dwestphal-lab/serviceportal/pulls
-2. Öffne den neuen PR
-3. Warte bis der grüne Haken (CI) erscheint
-4. Klicke "Squash and merge"
-5. Klicke "Confirm squash and merge"
-6. Klicke "Delete branch" (Branch aufräumen)
+Kopiere die Fehlermeldung aus GitHub Actions und sage Claude:
+"Der CI-Check ist fehlgeschlagen: [Fehlermeldung einfügen]
+ Bitte fix das und pushe erneut."
 ```
 
 ---
@@ -439,29 +462,24 @@ Commit-Tag:   fix(core): oder fix(module/name):
 
 ### Release: develop → main (Produktion)
 
-**Nur nach expliziter Entscheidung!**
+**Nur nach expliziter Entscheidung — einziger manueller Schritt!**
 
 ```
 Sage Claude: "Wir sind bereit für einen Release.
               Erstelle einen PR von develop auf main."
 ```
 
-Claude prüft dann:
-- Gibt es offene PRs die noch rein sollen?
-- Ist develop grün (CI)?
-- Changelog aktuell?
-
-Dann in GitHub:
-1. PR `develop → main` öffnen
-2. CI-Check abwarten (grüner Haken)
-3. **"Merge pull request"** klicken (kein Squash hier — normaler Merge)
-4. Produktion deployed sich automatisch (Polling alle 60s)
+Claude prüft und erstellt den PR. Dann:
+1. Öffne github.com/dwestphal-lab/serviceportal/pulls
+2. Grünen Haken abwarten (CI-Check, ca. 2–3 Min.)
+3. Klicke **"Merge pull request"**
+4. Prod-Server aktualisiert sich automatisch (max. 60s)
 
 ---
 
 ### Merge-Konflikt lösen
 
-Wenn GitHub "This branch has conflicts" anzeigt:
+Wenn der CI-Check mit "merge conflict" fehlschlägt:
 
 ```
 Sage Claude: "Es gibt einen Merge-Konflikt auf meinem Branch.

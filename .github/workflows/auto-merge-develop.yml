@@ -1,0 +1,95 @@
+name: CI + Auto-Merge → develop
+
+# ============================================================
+# Läuft bei jedem Push auf feature/* oder fix/*.
+# 1. TypeScript-Check Frontend + Backend (blockierend)
+# 2. Bei Erfolg: Squash-Merge in develop
+# 3. Server-Polling erkennt den neuen Commit und startet
+#    automatisch docker compose up -d --build (alle 60s)
+# ============================================================
+
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "fix/**"
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    name: TypeScript-Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      branch: ${{ steps.info.outputs.branch }}
+      commit_msg: ${{ steps.info.outputs.commit_msg }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Branch & Commit-Info
+        id: info
+        run: |
+          echo "branch=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          echo "commit_msg=$(git log -1 --format='%s')" >> "$GITHUB_OUTPUT"
+
+      - name: pnpm installieren
+        uses: pnpm/action-setup@v4
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Abhängigkeiten installieren
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript prüfen (Frontend)
+        run: pnpm --filter frontend tsc --noEmit
+
+      - name: TypeScript prüfen (Backend)
+        run: pnpm --filter backend tsc --noEmit
+
+  merge:
+    name: Auto-Merge → develop
+    needs: ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (mit Push-Rechten)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Git konfigurieren
+        run: |
+          git config user.name "PLENIUM CI"
+          git config user.email "ci@plenium.local"
+
+      - name: Squash-Merge in develop
+        run: |
+          BRANCH="${{ needs.ci.outputs.branch }}"
+          MSG="${{ needs.ci.outputs.commit_msg }}"
+
+          git fetch origin develop
+          git checkout develop
+
+          # Squash-Merge: alle Commits des Branches zu einem zusammenfassen
+          git merge --squash "origin/$BRANCH"
+
+          # Prüfen ob es überhaupt Änderungen gibt
+          if git diff --cached --quiet; then
+            echo "ℹ️  Keine neuen Änderungen — bereits in develop enthalten."
+            exit 0
+          fi
+
+          git commit -m "$MSG"
+          git push origin develop
+          echo "✅ $BRANCH erfolgreich nach develop gemergt."

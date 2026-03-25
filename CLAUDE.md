@@ -26,21 +26,62 @@ develop       →  Staging     —  gemeinsamer Integrations-Branch (Dev-Server)
 ```
 
 ### Regeln
-- **Niemand pusht direkt auf `main` oder `develop`** — immer per PR
+- **Niemand pusht direkt auf `main` oder `develop`** — immer über Feature/Fix-Branch
 - Jede Aufgabe = eigener Branch: `feature/name` oder `fix/name`
-- Feature/Fix fertig → PR auf `develop` → Review → Merge → Dev-Server
-- `develop` stabil → PR auf `main` → Produktion
+- Feature/Fix fertig → Push → CI prüft → **automatischer Merge in `develop`** → Dev-Server aktualisiert sich
+- `develop` stabil → PR auf `main` → Produktion (einzige manuelle Aktion)
 - Feature/Fix-Branches nach Merge löschen
 - Branch-Namen: Kleinbuchstaben, Bindestriche, kein Sonderzeichen
   Beispiele: `feature/ticketing-modul`, `fix/login-redirect`, `feature/auswertungen-export`
+
+### Vollautomatischer Flow (Feature → Dev-Server)
+
+```
+Push auf feature/* oder fix/*
+        ↓
+auto-merge-develop.yml: TypeScript-Check (Frontend + Backend)
+        ↓ bei Erfolg
+Squash-Merge in develop (automatisch, kein GitHub-Klick nötig)
+        ↓
+poll-and-deploy.sh erkennt neuen Commit auf develop (alle 60s)
+        ↓
+docker compose up -d --build
+        ↓
+Dev-Server ist aktualisiert ✓
+```
+
+### Release-Flow (develop → Produktion)
+
+```
+Manueller PR: develop → main
+        ↓
+ci-feature.yml: TypeScript-Check (blockierend)
+        ↓ bei Erfolg + expliziter Freigabe
+Merge in main
+        ↓
+poll-and-deploy.sh erkennt neuen Commit auf main (alle 60s)
+        ↓
+docker compose up -d --build (Prod)
+        ↓
+Produktions-Server ist aktualisiert ✓
+```
 
 ### CI/CD-Pipelines
 
 | Workflow | Auslöser | Aufgabe |
 |---|---|---|
-| `ci-feature.yml` | PR auf `develop` oder `main` | TS-Check Frontend + Backend — **blockiert Merge bei Fehler** |
-| `deploy-dev.yml` | Push auf `develop` (nach Merge) | TS-Check + Polling-Deploy Dev-Server |
-| `deploy-prod.yml` | Push auf `main` (nach Merge) | TS-Check + Polling-Deploy Prod-Server |
+| `auto-merge-develop.yml` | Push auf `feature/**` oder `fix/**` | TS-Check → **Auto-Merge in develop** |
+| `deploy-dev.yml` | Push auf `develop` (nach Auto-Merge) | TS-Check (Logging) — Deploy per Polling |
+| `ci-feature.yml` | PR auf `main` | TS-Check — **blockiert Release-Merge bei Fehler** |
+| `deploy-prod.yml` | Push auf `main` (nach PR-Merge) | TS-Check (Logging) — Deploy per Polling |
+
+### Server-Crontab (einmalig auf dem Server einrichten)
+
+```bash
+# crontab -e (als plenium-User)
+* * * * * /opt/plenium/scripts/poll-and-deploy.sh develop >> /opt/plenium/logs/develop.log 2>&1
+* * * * * /opt/plenium/scripts/poll-and-deploy.sh prod    >> /opt/plenium/logs/prod.log    2>&1
+```
 
 ---
 
@@ -84,13 +125,14 @@ Folgendes **immer** prüfen und gefundene Probleme **direkt fixen**:
 - Auf dem richtigen Feature/Fix-Branch arbeiten (niemals direkt auf `develop` oder `main`)
 - Commit-Message nach Convention (siehe unten)
 - Push auf den Feature/Fix-Branch
-- **PR erstellen** mit Titel, Summary und Test-Plan (siehe PR-Format unten)
+- **GitHub Actions übernimmt automatisch:** CI-Check → Merge in `develop` → Deploy
 
-### 7. `[MERGE]` — PR-Review & Merge-Unterstützung
-- CI-Ergebnis abwarten und bei Fehlern sofort fixen
-- Auf Review-Kommentare eingehen und Änderungen commiten
-- Nach grünem CI und Review: Merge in `develop` vorschlagen
-- Release-Merge (`develop` → `main`) **nur nach expliziter Freigabe**
+### 7. `[MERGE]` — Nur für Releases (develop → main)
+- Release-Merge **nur nach expliziter Freigabe** durch den User
+- PR von `develop` auf `main` erstellen
+- CI-Ergebnis abwarten, bei Fehlern sofort fixen
+- Nach grünem CI: User mergt in GitHub (einziger manueller Schritt)
+- Produktion updated sich automatisch per Polling
 
 ---
 

@@ -1,14 +1,14 @@
-name: CI → Feature / Fix Branch
+name: CI → Release-PR (develop → main)
 
 # ============================================================
-# Läuft bei jedem PR auf develop oder main.
-# Blockiert den Merge wenn TypeScript-Check fehlschlägt.
+# Läuft nur bei PRs auf main (Release-Freigabe).
+# Feature/Fix-Branches werden automatisch per auto-merge-develop.yml
+# in develop gemergt — kein manueller PR nötig.
 # ============================================================
 
 on:
   pull_request:
     branches:
-      - develop
       - main
 
 jobs:
