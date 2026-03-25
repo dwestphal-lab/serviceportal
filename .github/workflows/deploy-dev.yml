@@ -1,12 +1,15 @@
-name: CI → dev (shared)
+name: CI → develop
+
+# ============================================================
+# Läuft bei jedem Push auf develop (nach PR-Merge).
+# Das Deployment übernimmt der Server selbst per Cron-Polling:
+#   poll-and-deploy.sh develop (läuft jede Minute)
+# ============================================================
 
 on:
   push:
     branches:
-      - dev
-  pull_request:
-    branches:
-      - dev
+      - develop
 
 jobs:
   ci:
@@ -20,8 +23,6 @@ jobs:
 
       - name: pnpm installieren
         uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Node.js einrichten
         uses: actions/setup-node@v4
@@ -32,11 +33,15 @@ jobs:
       - name: Abhängigkeiten installieren
         run: pnpm install --frozen-lockfile
 
-      - name: TypeScript prüfen
+      - name: TypeScript prüfen (Frontend)
         run: pnpm --filter frontend tsc --noEmit
+
+      - name: TypeScript prüfen (Backend)
+        run: pnpm --filter backend tsc --noEmit
         continue-on-error: true
 
       - name: Info
+        if: success()
         run: |
-          echo "✓ CI abgeschlossen"
+          echo "✓ CI develop abgeschlossen"
           echo "→ Deployment erfolgt automatisch durch den Server (Polling alle 60s)"

@@ -1,18 +1,15 @@
-name: CI → dev-westphal
+name: CI → Release-PR (develop → main)
 
 # ============================================================
-# Dieses Workflow prüft nur die Code-Qualität.
-# Das Deployment übernimmt der Server selbst per Cron-Polling:
-#   poll-and-deploy.sh dev-westphal (läuft jede Minute)
+# Läuft nur bei PRs auf main (Release-Freigabe).
+# Feature/Fix-Branches werden automatisch per auto-merge-develop.yml
+# in develop gemergt — kein manueller PR nötig.
 # ============================================================
 
 on:
-  push:
-    branches:
-      - dev-westphal
   pull_request:
     branches:
-      - dev-westphal
+      - main
 
 jobs:
   ci:
@@ -26,8 +23,6 @@ jobs:
 
       - name: pnpm installieren
         uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Node.js einrichten
         uses: actions/setup-node@v4
@@ -38,11 +33,12 @@ jobs:
       - name: Abhängigkeiten installieren
         run: pnpm install --frozen-lockfile
 
-      - name: TypeScript prüfen
+      - name: TypeScript prüfen (Frontend)
         run: pnpm --filter frontend tsc --noEmit
-        continue-on-error: true
 
-      - name: Info
-        run: |
-          echo "✓ CI abgeschlossen"
-          echo "→ Deployment erfolgt automatisch durch den Server (Polling alle 60s)"
+      - name: TypeScript prüfen (Backend)
+        run: pnpm --filter backend tsc --noEmit
+
+      - name: CI-Ergebnis
+        if: success()
+        run: echo "✓ TypeScript-Check bestanden — PR kann gemergt werden"

@@ -6,10 +6,8 @@
 # Prüft ob GitHub neue Commits hat — falls ja: deploy.sh.
 #
 # Installation (als plenium-User, crontab -e):
-#   * * * * * /opt/plenium/scripts/poll-and-deploy.sh dev-westphal >> /opt/plenium/logs/dev-westphal.log 2>&1
-#   * * * * * /opt/plenium/scripts/poll-and-deploy.sh dev-asmussen  >> /opt/plenium/logs/dev-asmussen.log  2>&1
-#   * * * * * /opt/plenium/scripts/poll-and-deploy.sh dev          >> /opt/plenium/logs/dev.log          2>&1
-#   * * * * * /opt/plenium/scripts/poll-and-deploy.sh prod         >> /opt/plenium/logs/prod.log         2>&1
+#   * * * * * /opt/plenium/scripts/poll-and-deploy.sh develop >> /opt/plenium/logs/develop.log 2>&1
+#   * * * * * /opt/plenium/scripts/poll-and-deploy.sh prod    >> /opt/plenium/logs/prod.log    2>&1
 # ============================================================
 
 ENVIRONMENT=${1:-}
@@ -20,12 +18,11 @@ DEPLOY_SCRIPT="/opt/plenium/scripts/deploy.sh"
 # ── Umgebung → Branch ────────────────────────────────────────────────────────
 
 case "$ENVIRONMENT" in
-  dev-westphal) BRANCH="dev-westphal" ;;
-  dev-asmussen)  BRANCH="dev-asmussen"  ;;
-  dev)          BRANCH="dev"          ;;
-  prod)         BRANCH="main"         ;;
+  develop) BRANCH="develop" ;;
+  prod)    BRANCH="main"    ;;
   *)
     echo "$(date '+%Y-%m-%d %H:%M:%S') ERROR: Unbekannte Umgebung '$ENVIRONMENT'"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') Erlaubte Werte: develop | prod"
     exit 1
     ;;
 esac

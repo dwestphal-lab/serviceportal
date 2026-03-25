@@ -9,6 +9,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-03-25
+
+### Added
+- `.github/workflows/auto-merge-develop.yml`: Push auf `feature/**`/`fix/**` → TS-Check → automatischer Squash-Merge in `develop`
+
+### Changed
+- `.github/workflows/ci-feature.yml`: Nur noch für Release-PRs auf `main` (Feature→develop läuft jetzt vollautomatisch)
+- `scripts/poll-and-deploy.sh`: Branch-Mapping auf `develop`/`prod` vereinfacht (persönliche Branches entfernt)
+- `scripts/deploy.sh`: Umgebungen auf `develop`/`prod` reduziert
+- `CLAUDE.md`: Vollautomatischen Flow dokumentiert (Feature-Push → Auto-Merge → Docker-Rebuild)
+- `ENTWICKLUNG.md`: Branch-Workflow aktualisiert — kein manuelles GitHub-Klicken mehr für Feature/Fix-Branches
+
+## [0.3.2] - 2026-03-25
+
+### Changed
+- Git-Branch-Strategie auf GitHub Flow umgestellt: `main` → `develop` → `feature/*` / `fix/*`
+- CLAUDE.md: Branch-Strategie, PR-Format, Merge-Regeln und Konflikt-Lösung dokumentiert
+- Pflicht-Workflow auf 7 Schritte erweitert (neuer Schritt `[MERGE]`)
+- `.github/workflows/deploy-dev.yml`: Auf Branch `develop` umgestellt, Backend-TS-Check ergänzt
+
+### Added
+- `.github/workflows/ci-feature.yml`: CI-Check (TS Frontend + Backend) für alle PRs auf `develop`/`main`
+
+### Removed
+- `.github/workflows/deploy-dev-asmussen.yml`: Persönlicher Branch-Workflow entfernt
+- `.github/workflows/deploy-dev-westphal.yml`: Persönlicher Branch-Workflow entfernt
+
 ## [0.3.1] - 2026-03-25
 
 ### Added

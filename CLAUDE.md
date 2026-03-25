@@ -10,12 +10,86 @@ Every session **must** follow this workflow — **no exceptions**.
 **Working Directory:** `c:\serviceportal`
 **Stack:** Next.js 15 · Fastify v5 · PostgreSQL 17 · Prisma 6 · pnpm Workspaces · Turborepo · Docker + NGINX
 
+> **Entwicklungs-Guide (Schritt-für-Schritt für alle Umgebungen):**
+> Siehe [`ENTWICKLUNG.md`](./ENTWICKLUNG.md) — Web, iOS, Windows App, CLI, VS Code
+
 ---
 
-## Pflicht-Workflow (6 Schritte)
+## Git-Branch-Strategie
+
+```
+main          →  Produktion  — nur geprüfter, freigegebener Code
+develop       →  Staging     —  gemeinsamer Integrations-Branch (Dev-Server)
+  │
+  ├── feature/kurzer-name   →  Neue Features
+  └── fix/kurzer-name       →  Bugfixes
+```
+
+### Regeln
+- **Niemand pusht direkt auf `main` oder `develop`** — immer über Feature/Fix-Branch
+- Jede Aufgabe = eigener Branch: `feature/name` oder `fix/name`
+- Feature/Fix fertig → Push → CI prüft → **automatischer Merge in `develop`** → Dev-Server aktualisiert sich
+- `develop` stabil → PR auf `main` → Produktion (einzige manuelle Aktion)
+- Feature/Fix-Branches nach Merge löschen
+- Branch-Namen: Kleinbuchstaben, Bindestriche, kein Sonderzeichen
+  Beispiele: `feature/ticketing-modul`, `fix/login-redirect`, `feature/auswertungen-export`
+
+### Vollautomatischer Flow (Feature → Dev-Server)
+
+```
+Push auf feature/* oder fix/*
+        ↓
+auto-merge-develop.yml: TypeScript-Check (Frontend + Backend)
+        ↓ bei Erfolg
+Squash-Merge in develop (automatisch, kein GitHub-Klick nötig)
+        ↓
+poll-and-deploy.sh erkennt neuen Commit auf develop (alle 60s)
+        ↓
+docker compose up -d --build
+        ↓
+Dev-Server ist aktualisiert ✓
+```
+
+### Release-Flow (develop → Produktion)
+
+```
+Manueller PR: develop → main
+        ↓
+ci-feature.yml: TypeScript-Check (blockierend)
+        ↓ bei Erfolg + expliziter Freigabe
+Merge in main
+        ↓
+poll-and-deploy.sh erkennt neuen Commit auf main (alle 60s)
+        ↓
+docker compose up -d --build (Prod)
+        ↓
+Produktions-Server ist aktualisiert ✓
+```
+
+### CI/CD-Pipelines
+
+| Workflow | Auslöser | Aufgabe |
+|---|---|---|
+| `auto-merge-develop.yml` | Push auf `feature/**` oder `fix/**` | TS-Check → **Auto-Merge in develop** |
+| `deploy-dev.yml` | Push auf `develop` (nach Auto-Merge) | TS-Check (Logging) — Deploy per Polling |
+| `ci-feature.yml` | PR auf `main` | TS-Check — **blockiert Release-Merge bei Fehler** |
+| `deploy-prod.yml` | Push auf `main` (nach PR-Merge) | TS-Check (Logging) — Deploy per Polling |
+
+### Server-Crontab (einmalig auf dem Server einrichten)
+
+```bash
+# crontab -e (als plenium-User)
+* * * * * /opt/plenium/scripts/poll-and-deploy.sh develop >> /opt/plenium/logs/develop.log 2>&1
+* * * * * /opt/plenium/scripts/poll-and-deploy.sh prod    >> /opt/plenium/logs/prod.log    2>&1
+```
+
+---
+
+## Pflicht-Workflow (7 Schritte)
 
 ### 1. `[PLAN]` — Planung vor dem Coding
 - Aufgabe analysieren und **Rückfragen stellen** falls unklar
+- **Branch-Typ bestimmen:** `feature/` für neue Funktionen, `fix/` für Bugfixes
 - **Lösungsvorschlag** mit Alternativen und Verbesserungsvorschlägen präsentieren
 - **Warten auf explizite Freigabe** durch den User — erst dann darf Code geschrieben werden
 - Format: Klare Auflistung der geplanten Änderungen, betroffene Dateien, Risiken
@@ -46,10 +120,19 @@ Folgendes **immer** prüfen und gefundene Probleme **direkt fixen**:
 - Bei Fehlern: fixen, dann erneut prüfen
 - Erst wenn fehlerfrei: weiter zu Schritt 6
 
-### 6. `[COMMIT]` — Git Commit & Push
+### 6. `[COMMIT]` — Branch, Commit & Push
 - **Nur nach expliziter Freigabe durch den User**
+- Auf dem richtigen Feature/Fix-Branch arbeiten (niemals direkt auf `develop` oder `main`)
 - Commit-Message nach Convention (siehe unten)
-- Push **nur** wenn der User explizit "push" oder "pushen" sagt
+- Push auf den Feature/Fix-Branch
+- **GitHub Actions übernimmt automatisch:** CI-Check → Merge in `develop` → Deploy
+
+### 7. `[MERGE]` — Nur für Releases (develop → main)
+- Release-Merge **nur nach expliziter Freigabe** durch den User
+- PR von `develop` auf `main` erstellen
+- CI-Ergebnis abwarten, bei Fehlern sofort fixen
+- Nach grünem CI: User mergt in GitHub (einziger manueller Schritt)
+- Produktion updated sich automatisch per Polling
 
 ---
 
@@ -62,6 +145,7 @@ fix(core):          Bugfix im Kern
 fix(module/name):   Bugfix in einem Modul
 db(migration):      Neue Datenbank-Migration
 docker:             Docker/Deployment Änderung
+ci:                 GitHub Actions / Workflow Änderung
 review:             Code-Review Fixes
 docs:               Dokumentation / Changelog
 config:             Konfigurationsänderung
@@ -77,6 +161,47 @@ feat(module/ticketing): Add ticket status workflow with state machine
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
+
+---
+
+## PR-Format
+
+Beim Erstellen eines PRs immer dieses Format verwenden:
+
+```
+Titel:  feat(module/name): Kurze Beschreibung (max. 72 Zeichen)
+
+## Was wurde geändert?
+- Bullet-Point 1
+- Bullet-Point 2
+
+## Warum?
+Kurze Begründung der Änderung.
+
+## Test-Plan
+- [ ] Lokal getestet: [was genau]
+- [ ] CI grün
+- [ ] Keine neuen TypeScript-Fehler
+- [ ] Kein Sicherheitsproblem eingeführt
+
+## Merge-Ziel
+- [ ] → develop  (Feature/Fix fertig)
+- [ ] → main     (Release, nur nach Freigabe)
+```
+
+### Merge-Regeln
+- PRs auf `develop`: 1 Review ausreichend (oder CI grün bei Solo-Arbeit)
+- PRs auf `main`: **immer** explizite Freigabe durch den User
+- Squash-Merge bevorzugt — ein sauberer Commit pro Feature/Fix
+- Branch nach Merge löschen
+
+### Konflikte lösen
+Wenn beim Merge Konflikte entstehen:
+1. `git fetch origin develop`
+2. `git rebase origin/develop` auf dem Feature-Branch
+3. Konflikte manuell auflösen, `git rebase --continue`
+4. Force-Push auf den Feature-Branch: `git push --force-with-lease`
+5. **Niemals** auf `develop` oder `main` rebasen/force-pushen
 
 ---
 
@@ -171,7 +296,15 @@ Wenn ein neues Modul hinzugefügt wird:
 
 ## Git-Repository
 
-Das Repository wird beim ersten Commit-Request abgefragt.
+**Remote:** `github.com/dwestphal-lab/serviceportal`
+
+### Branches im Remote
+| Branch | Zweck | Deploy |
+|---|---|---|
+| `main` | Produktion | Polling → Prod-Server |
+| `develop` | Staging / Integration | Polling → Dev-Server |
+| `feature/*` | Neue Features | nur lokal / PR |
+| `fix/*` | Bugfixes | nur lokal / PR |
 
 ---
 

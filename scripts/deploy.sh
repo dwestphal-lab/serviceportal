@@ -16,17 +16,15 @@ REPO_DIR="/opt/plenium/repo"
 ENV_DIR="/opt/plenium/envs"
 
 if [ -z "$ENVIRONMENT" ]; then
-  echo "Verwendung: $0 <dev-westphal|dev-asmussen|dev|prod>"
+  echo "Verwendung: $0 <develop|prod>"
   exit 1
 fi
 
 case "$ENVIRONMENT" in
-  dev-westphal) BRANCH="dev-westphal" ; COMPOSE="docker-compose.dev.yml" ;;
-  dev-asmussen)  BRANCH="dev-asmussen"  ; COMPOSE="docker-compose.dev.yml" ;;
-  dev)          BRANCH="dev"          ; COMPOSE="docker-compose.dev.yml" ;;
-  prod)         BRANCH="main"         ; COMPOSE="docker-compose.prod.yml" ;;
+  develop) BRANCH="develop" ; COMPOSE="docker-compose.dev.yml"  ;;
+  prod)    BRANCH="main"    ; COMPOSE="docker-compose.prod.yml" ;;
   *)
-    echo "Unbekannte Umgebung: $ENVIRONMENT"
+    echo "Unbekannte Umgebung: $ENVIRONMENT (erlaubt: develop | prod)"
     exit 1
     ;;
 esac
