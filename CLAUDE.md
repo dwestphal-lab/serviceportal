@@ -10,6 +10,9 @@ Every session **must** follow this workflow — **no exceptions**.
 **Working Directory:** `c:\serviceportal`
 **Stack:** Next.js 15 · Fastify v5 · PostgreSQL 17 · Prisma 6 · pnpm Workspaces · Turborepo · Docker + NGINX
 
+> **Entwicklungs-Guide (Schritt-für-Schritt für alle Umgebungen):**
+> Siehe [`ENTWICKLUNG.md`](./ENTWICKLUNG.md) — Web, iOS, Windows App, CLI, VS Code
+
 ---
 
 ## Git-Branch-Strategie
