@@ -12,10 +12,40 @@ Every session **must** follow this workflow — **no exceptions**.
 
 ---
 
-## Pflicht-Workflow (6 Schritte)
+## Git-Branch-Strategie
+
+```
+main          →  Produktion  — nur geprüfter, freigegebener Code
+develop       →  Staging     —  gemeinsamer Integrations-Branch (Dev-Server)
+  │
+  ├── feature/kurzer-name   →  Neue Features
+  └── fix/kurzer-name       →  Bugfixes
+```
+
+### Regeln
+- **Niemand pusht direkt auf `main` oder `develop`** — immer per PR
+- Jede Aufgabe = eigener Branch: `feature/name` oder `fix/name`
+- Feature/Fix fertig → PR auf `develop` → Review → Merge → Dev-Server
+- `develop` stabil → PR auf `main` → Produktion
+- Feature/Fix-Branches nach Merge löschen
+- Branch-Namen: Kleinbuchstaben, Bindestriche, kein Sonderzeichen
+  Beispiele: `feature/ticketing-modul`, `fix/login-redirect`, `feature/auswertungen-export`
+
+### CI/CD-Pipelines
+
+| Workflow | Auslöser | Aufgabe |
+|---|---|---|
+| `ci-feature.yml` | PR auf `develop` oder `main` | TS-Check Frontend + Backend — **blockiert Merge bei Fehler** |
+| `deploy-dev.yml` | Push auf `develop` (nach Merge) | TS-Check + Polling-Deploy Dev-Server |
+| `deploy-prod.yml` | Push auf `main` (nach Merge) | TS-Check + Polling-Deploy Prod-Server |
+
+---
+
+## Pflicht-Workflow (7 Schritte)
 
 ### 1. `[PLAN]` — Planung vor dem Coding
 - Aufgabe analysieren und **Rückfragen stellen** falls unklar
+- **Branch-Typ bestimmen:** `feature/` für neue Funktionen, `fix/` für Bugfixes
 - **Lösungsvorschlag** mit Alternativen und Verbesserungsvorschlägen präsentieren
 - **Warten auf explizite Freigabe** durch den User — erst dann darf Code geschrieben werden
 - Format: Klare Auflistung der geplanten Änderungen, betroffene Dateien, Risiken
@@ -46,10 +76,18 @@ Folgendes **immer** prüfen und gefundene Probleme **direkt fixen**:
 - Bei Fehlern: fixen, dann erneut prüfen
 - Erst wenn fehlerfrei: weiter zu Schritt 6
 
-### 6. `[COMMIT]` — Git Commit & Push
+### 6. `[COMMIT]` — Branch, Commit & Push
 - **Nur nach expliziter Freigabe durch den User**
+- Auf dem richtigen Feature/Fix-Branch arbeiten (niemals direkt auf `develop` oder `main`)
 - Commit-Message nach Convention (siehe unten)
-- Push **nur** wenn der User explizit "push" oder "pushen" sagt
+- Push auf den Feature/Fix-Branch
+- **PR erstellen** mit Titel, Summary und Test-Plan (siehe PR-Format unten)
+
+### 7. `[MERGE]` — PR-Review & Merge-Unterstützung
+- CI-Ergebnis abwarten und bei Fehlern sofort fixen
+- Auf Review-Kommentare eingehen und Änderungen commiten
+- Nach grünem CI und Review: Merge in `develop` vorschlagen
+- Release-Merge (`develop` → `main`) **nur nach expliziter Freigabe**
 
 ---
 
@@ -62,6 +100,7 @@ fix(core):          Bugfix im Kern
 fix(module/name):   Bugfix in einem Modul
 db(migration):      Neue Datenbank-Migration
 docker:             Docker/Deployment Änderung
+ci:                 GitHub Actions / Workflow Änderung
 review:             Code-Review Fixes
 docs:               Dokumentation / Changelog
 config:             Konfigurationsänderung
@@ -77,6 +116,47 @@ feat(module/ticketing): Add ticket status workflow with state machine
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
+
+---
+
+## PR-Format
+
+Beim Erstellen eines PRs immer dieses Format verwenden:
+
+```
+Titel:  feat(module/name): Kurze Beschreibung (max. 72 Zeichen)
+
+## Was wurde geändert?
+- Bullet-Point 1
+- Bullet-Point 2
+
+## Warum?
+Kurze Begründung der Änderung.
+
+## Test-Plan
+- [ ] Lokal getestet: [was genau]
+- [ ] CI grün
+- [ ] Keine neuen TypeScript-Fehler
+- [ ] Kein Sicherheitsproblem eingeführt
+
+## Merge-Ziel
+- [ ] → develop  (Feature/Fix fertig)
+- [ ] → main     (Release, nur nach Freigabe)
+```
+
+### Merge-Regeln
+- PRs auf `develop`: 1 Review ausreichend (oder CI grün bei Solo-Arbeit)
+- PRs auf `main`: **immer** explizite Freigabe durch den User
+- Squash-Merge bevorzugt — ein sauberer Commit pro Feature/Fix
+- Branch nach Merge löschen
+
+### Konflikte lösen
+Wenn beim Merge Konflikte entstehen:
+1. `git fetch origin develop`
+2. `git rebase origin/develop` auf dem Feature-Branch
+3. Konflikte manuell auflösen, `git rebase --continue`
+4. Force-Push auf den Feature-Branch: `git push --force-with-lease`
+5. **Niemals** auf `develop` oder `main` rebasen/force-pushen
 
 ---
 
@@ -171,7 +251,15 @@ Wenn ein neues Modul hinzugefügt wird:
 
 ## Git-Repository
 
-Das Repository wird beim ersten Commit-Request abgefragt.
+**Remote:** `github.com/dwestphal-lab/serviceportal`
+
+### Branches im Remote
+| Branch | Zweck | Deploy |
+|---|---|---|
+| `main` | Produktion | Polling → Prod-Server |
+| `develop` | Staging / Integration | Polling → Dev-Server |
+| `feature/*` | Neue Features | nur lokal / PR |
+| `fix/*` | Bugfixes | nur lokal / PR |
 
 ---
 

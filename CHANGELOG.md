@@ -9,6 +9,21 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-03-25
+
+### Changed
+- Git-Branch-Strategie auf GitHub Flow umgestellt: `main` → `develop` → `feature/*` / `fix/*`
+- CLAUDE.md: Branch-Strategie, PR-Format, Merge-Regeln und Konflikt-Lösung dokumentiert
+- Pflicht-Workflow auf 7 Schritte erweitert (neuer Schritt `[MERGE]`)
+- `.github/workflows/deploy-dev.yml`: Auf Branch `develop` umgestellt, Backend-TS-Check ergänzt
+
+### Added
+- `.github/workflows/ci-feature.yml`: CI-Check (TS Frontend + Backend) für alle PRs auf `develop`/`main`
+
+### Removed
+- `.github/workflows/deploy-dev-asmussen.yml`: Persönlicher Branch-Workflow entfernt
+- `.github/workflows/deploy-dev-westphal.yml`: Persönlicher Branch-Workflow entfernt
+
 ## [0.3.1] - 2026-03-25
 
 ### Added
